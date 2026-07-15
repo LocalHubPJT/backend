@@ -147,7 +147,7 @@ def create_post(post: schemas.PostCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/api/posts", response_model=List[schemas.PostResponse])
-def get_posts(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
+def get_posts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """게시글 목록 조회 (최신순 정렬)"""
     return db.query(models.Post).order_by(models.Post.id.desc()).offset(skip).limit(limit).all()
 
@@ -251,7 +251,7 @@ def get_locations(category_id: Optional[str] = None, query: Optional[str] = None
         q = q.filter(models.LocationData.contenttypeid == category_id)
     if query:
         q = q.filter(models.LocationData.title.contains(query) | models.LocationData.addr1.contains(query))
-    return q.limit(50).all()
+    return q.limit(2000).all()
 
 
 
@@ -295,7 +295,7 @@ def chat_with_local_guide(req: schemas.ChatRequest, db: Session = Depends(get_db
     # 2. OpenAI GPT API 호출 (system prompt 설정을 통해 대전·충청 전문가 페르소나 부여)
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",  # 가성비와 속도가 훌륭한 gpt-4o-mini 권장
+            model="gpt-5-mini",  # 가성비와 속도가 훌륭한 gpt-4o-mini 권장
             messages=[
                 {
                     "role": "system",
@@ -310,8 +310,7 @@ def chat_with_local_guide(req: schemas.ChatRequest, db: Session = Depends(get_db
                     "role": "user",
                     "content": f"{context}\n\n사용자 질문: {user_message}"
                 }
-            ],
-            temperature=0.7
+            ]
         )
         
         ai_reply = response.choices[0].message.content
