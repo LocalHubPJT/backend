@@ -195,6 +195,26 @@ def delete_post(post_id: int, req: schemas.PostDelete, db: Session = Depends(get
     db.commit()
     return {"message": "게시글이 성공적으로 삭제되었습니다."}
 
+# 비밀번호 검증
+@app.post("/api/posts/{post_id}/verify")
+def verify_post_password(
+    post_id: int,
+    req: schemas.PostDelete,
+    db: Session = Depends(get_db)
+):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+
+    if not db_post:
+        raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+
+    if db_post.password != req.password:
+        raise HTTPException(
+            status_code=403,
+            detail="비밀번호가 일치하지 않습니다."
+        )
+
+    return {"message": "비밀번호 확인 완료"}
+
 
 # ==========================================
 # [API] 2. 댓글 관련 API
