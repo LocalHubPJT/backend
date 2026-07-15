@@ -179,13 +179,15 @@ def update_post(post_id: int, post_update: schemas.PostUpdate, db: Session = Dep
     return db_post
 
 
-@app.post("/api/posts/{post_id}/delete")  # DELETE 메소드 대신 POST 활용 (요청 Body로 패스워드 받기 위함)
+# 비밀번호는 쿼리 매개변수(password: str)로 직접 받습니다.
+@app.delete("/api/posts/{post_id}")
 def delete_post(post_id: int, req: schemas.PostDelete, db: Session = Depends(get_db)):
-    """익명 게시글 삭제 (비밀번호 일치 여부 검증)"""
+    """익명 게시글 삭제 (Body의 비밀번호 일치 여부 검증)"""
     db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
     if not db_post:
         raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
     
+    # Body로 전달받은 req.password와 비교합니다.
     if db_post.password != req.password:
         raise HTTPException(status_code=403, detail="비밀번호가 일치하지 않아 삭제 권한이 없습니다.")
     
