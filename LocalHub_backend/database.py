@@ -1,26 +1,55 @@
 # database.py
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 import os
+
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 load_dotenv()
 
-# 환경변수에서 DATABASE_URL을 가져오며, 기본값으로 로컬 sqlite를 지정합니다.
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./localhub.db")
-
-# SQLite의 경우 멀티 스레드 접근을 허용하기 위해 connect_args 설정이 필요합니다.
-engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
+# 로컬에서는 기본값으로 SQLite를 사용하고,
+# Render에서는 환경변수 DATABASE_URL의 PostgreSQL 주소를 사용합니다.
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///./localhub.db",
 )
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# 일부 환경에서 postgres:// 형식으로 전달될 경우
+# SQLAlchemy가 인식하는 postgresql:// 형식으로 변경합니다.
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace(
+        "postgres://",
+        "postgresql://",
+        1,
+    )
+
+engine_options = {
+    "pool_pre_ping": True,
+}
+
+# check_same_thread는 SQLite에서만 사용할 수 있습니다.
+if DATABASE_URL.startswith("sqlite"):
+    engine_options["connect_args"] = {
+        "check_same_thread": False,
+    }
+
+engine = create_engine(
+    DATABASE_URL,
+    **engine_options,
+)
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
 
 Base = declarative_base()
 
-# DB 세션 의존성 주입을 위한 제너레이터 함수
+
 def get_db():
     db = SessionLocal()
+
     try:
         yield db
     finally:
