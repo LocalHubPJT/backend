@@ -30,7 +30,7 @@ app = FastAPI(title="LocalHub API Server")
 # 2. CORS 미들웨어 설정 (프론트엔드 레포가 분리되어 있으므로 필수!)
 origins = [
     "http://localhost:5173",  # Vue.js 로컬 개발 포트
-    # 추후 Netlify 배포 시 실제 프론트 주소를 여기에 추가하게 됩니다.
+    "https://daejeon-zip.netlify.app" # Netlify 배포 프론트 주소
 ]
 
 app.add_middleware(
